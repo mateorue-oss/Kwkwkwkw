@@ -93,39 +93,70 @@ stealBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- [5] FLY: Flotar en móvil (sube, baja, apaga)
-local flyState = 0 -- 0: off, 1: up, 2: down
+-- [5] FLY: Flotar en móvil (control por joystick)
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local flyActive = false
 local flyBtn = makeBtn("Fly: OFF", Color3.fromRGB(120, 200, 255))
-local flyBV = nil
+local flyBV
 
-local function setFly(state)
+local moveDir = Vector3.new()
+local cam = workspace.CurrentCamera
+
+local function enableFly()
+    flyActive = true
+    flyBtn.Text = "Fly: ON"
+    flyBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
     local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    if flyBV then flyBV:Destroy() flyBV = nil end
-    if state == 1 then
+    if hrp then
         flyBV = Instance.new("BodyVelocity")
-        flyBV.MaxForce = Vector3.new(0, math.huge, 0)
-        flyBV.Velocity = Vector3.new(0, 40, 0)
+        flyBV.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        flyBV.Velocity = Vector3.new(0,0,0)
         flyBV.Parent = hrp
-        flyBtn.Text = "Fly: SUBIENDO"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
-    elseif state == 2 then
-        flyBV = Instance.new("BodyVelocity")
-        flyBV.MaxForce = Vector3.new(0, math.huge, 0)
-        flyBV.Velocity = Vector3.new(0, -40, 0)
-        flyBV.Parent = hrp
-        flyBtn.Text = "Fly: BAJANDO"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(255, 160, 60)
-    else
-        if flyBV then flyBV:Destroy() flyBV = nil end
-        flyBtn.Text = "Fly: OFF"
-        flyBtn.BackgroundColor3 = Color3.fromRGB(120, 200, 255)
     end
 end
 
+local function disableFly()
+    flyActive = false
+    flyBtn.Text = "Fly: OFF"
+    flyBtn.BackgroundColor3 = Color3.fromRGB(120, 200, 255)
+    if flyBV then flyBV:Destroy() flyBV = nil end
+end
+
 flyBtn.MouseButton1Click:Connect(function()
-    flyState = (flyState + 1) % 3 -- 0 -> 1 -> 2 -> 0 ...
-    setFly(flyState)
+    if flyActive then
+        disableFly()
+    else
+        enableFly()
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.Gamepad1 then
+        if input.KeyCode == Enum.KeyCode.Thumbstick1 then
+            moveDir = Vector3.new(input.Position.X, 0, -input.Position.Y)
+        end
+    end
+end)
+UIS.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Thumbstick1 then
+        moveDir = Vector3.new()
+    end
+end)
+
+RS.RenderStepped:Connect(function()
+    if flyActive and flyBV and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local dir = moveDir
+        if dir.Magnitude > 0 then
+            local camCF = cam.CFrame
+            local move = (camCF.RightVector * dir.X + camCF.LookVector * dir.Z)
+            if move.Magnitude > 0 then
+                flyBV.Velocity = Vector3.new(move.X, 0, move.Z).Unit * 50
+            end
+        else
+            flyBV.Velocity = Vector3.new(0, 0, 0)
+        end
+    end
 end)
 
 -- [6] NOCLIP
@@ -142,7 +173,7 @@ noclipBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-game:GetService('RunService').Stepped:Connect(function()
+RS.Stepped:Connect(function()
     if noclip and player.Character then
         for _,v in pairs(player.Character:GetDescendants()) do
             if v:IsA("BasePart") then
@@ -152,4 +183,30 @@ game:GetService('RunService').Stepped:Connect(function()
     end
 end)
 
-print("Menú lateral Brainrot cargado (AutoSteal, Fly, Noclip).")
+-- [7] MARCAR MI BASE E IR A MI BASE
+local basePosition = nil
+
+local markBaseBtn = makeBtn("Marcar mi base", Color3.fromRGB(120, 255, 180))
+local goBaseBtn = makeBtn("Ir a mi base", Color3.fromRGB(180, 120, 255))
+
+markBaseBtn.MouseButton1Click:Connect(function()
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        basePosition = hrp.Position
+        markBaseBtn.Text = "Base marcada ✔"
+        wait(1.2)
+        markBaseBtn.Text = "Marcar mi base"
+    end
+end)
+
+goBaseBtn.MouseButton1Click:Connect(function()
+    if basePosition and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(basePosition + Vector3.new(0,5,0))
+    else
+        goBaseBtn.Text = "Primero marca la base"
+        wait(1.2)
+        goBaseBtn.Text = "Ir a mi base"
+    end
+end)
+
+print("Menú lateral Brainrot cargado (AutoSteal, Fly joystick, Noclip, Marcar base, Ir a base).")
