@@ -1,87 +1,46 @@
--- Script Roblox: Menú GUI para Steal a Brainrot con contraseña de acceso
+--// Script Roblox: Brainrot - Menú Lateral Móvil con AutoSteal, Fly y Noclip
 
 local player = game.Players.LocalPlayer
 
--- CONFIGURA AQUÍ TU CONTRASEÑA
-local PASSWORD = "Senko Hub"
-
--- GUI para la contraseña
-local passGui = Instance.new("ScreenGui")
-passGui.Name = "PasswordPrompt"
-passGui.Parent = game.CoreGui
-
-local passFrame = Instance.new("Frame")
-passFrame.Size = UDim2.new(0, 270, 0, 120)
-passFrame.Position = UDim2.new(0.5, -135, 0.5, -60)
-passFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-passFrame.BackgroundTransparency = 0.15
-passFrame.Parent = passGui
-
-local passUICorner = Instance.new("UICorner", passFrame)
-passUICorner.CornerRadius = UDim.new(0, 12)
-
-local passLabel = Instance.new("TextLabel")
-passLabel.Size = UDim2.new(1, 0, 0, 28)
-passLabel.Position = UDim2.new(0,0,0,16)
-passLabel.BackgroundTransparency = 1
-passLabel.Text = "Introduce la contraseña para acceder:"
-passLabel.TextColor3 = Color3.new(1,1,1)
-passLabel.Font = Enum.Font.GothamBold
-passLabel.TextSize = 15
-passLabel.Parent = passFrame
-
-local passBox = Instance.new("TextBox")
-passBox.Size = UDim2.new(1, -40, 0, 34)
-passBox.Position = UDim2.new(0, 20, 0, 52)
-passBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
-passBox.TextColor3 = Color3.new(1,1,1)
-passBox.Font = Enum.Font.Gotham
-passBox.TextSize = 18
-passBox.PlaceholderText = "Contraseña..."
-passBox.Text = ""
-passBox.Parent = passFrame
-
-local passBtn = Instance.new("TextButton")
-passBtn.Size = UDim2.new(1, -40, 0, 26)
-passBtn.Position = UDim2.new(0, 20, 0, 92)
-passBtn.BackgroundColor3 = Color3.fromRGB(38, 174, 255)
-passBtn.TextColor3 = Color3.new(1,1,1)
-passBtn.Font = Enum.Font.GothamBold
-passBtn.TextSize = 14
-passBtn.Text = "Entrar"
-passBtn.Parent = passFrame
-
-local accessGranted = false
-
-passBtn.MouseButton1Click:Connect(function()
-    if passBox.Text == PASSWORD then
-        accessGranted = true
-        passGui:Destroy()
-    else
-        passBox.Text = ""
-        passBox.PlaceholderText = "Contraseña incorrecta"
-        passBox.PlaceholderColor3 = Color3.fromRGB(255,70,70)
-    end
-end)
-
--- Espera hasta que se ponga la contraseña correcta
-repeat wait() until accessGranted
-
--- Crear GUI principal
+-- [1] BOTÓN FLOTANTE PARA ABRIR/CERRAR MENÚ
 local gui = Instance.new("ScreenGui")
 gui.Name = "BrainrotMenu"
 gui.Parent = game.CoreGui
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 240, 0, 150)
-frame.Position = UDim2.new(0, 50, 0, 120)
-frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-frame.BackgroundTransparency = 0.15
-frame.Parent = gui
+local openBtn = Instance.new("TextButton")
+openBtn.Name = "OpenMenuBtn"
+openBtn.Size = UDim2.new(0, 46, 0, 46)
+openBtn.Position = UDim2.new(0, 10, 0.5, -23)
+openBtn.BackgroundColor3 = Color3.fromRGB(255, 174, 66)
+openBtn.TextColor3 = Color3.new(1,1,1)
+openBtn.Font = Enum.Font.GothamBlack
+openBtn.TextSize = 20
+openBtn.Text = "≡"
+openBtn.Parent = gui
+openBtn.ZIndex = 10
+local openUICorner = Instance.new("UICorner", openBtn)
+openUICorner.CornerRadius = UDim.new(1, 0)
 
-local UICorner = Instance.new("UICorner", frame)
-UICorner.CornerRadius = UDim.new(0, 12)
+-- [2] MENÚ LATERAL
+local menuFrame = Instance.new("Frame")
+menuFrame.Size = UDim2.new(0, 210, 0, 196)
+menuFrame.Position = UDim2.new(0, 60, 0.5, -98)
+menuFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+menuFrame.BackgroundTransparency = 0.15
+menuFrame.Visible = false
+menuFrame.Parent = gui
+menuFrame.ZIndex = 9
+local menuUICorner = Instance.new("UICorner", menuFrame)
+menuUICorner.CornerRadius = UDim.new(0, 13)
 
+menuFrame.Active = true
+menuFrame.Draggable = true
+
+openBtn.MouseButton1Click:Connect(function()
+    menuFrame.Visible = not menuFrame.Visible
+end)
+
+-- [3] BOTONES DEL MENÚ
 local y = 18
 local function makeBtn(text, color)
     local btn = Instance.new("TextButton")
@@ -92,12 +51,14 @@ local function makeBtn(text, color)
     btn.TextSize = 16
     btn.BackgroundColor3 = color
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.Parent = frame
+    btn.Parent = menuFrame
+    btn.AutoButtonColor = true
+    btn.ZIndex = 10
     y = y + 46
     return btn
 end
 
--- AUTOSTEAL (lleva al jugador automáticamente al "Brain")
+-- [4] AUTOSTEAL
 local autoStealOn = false
 
 local function findBrain()
@@ -115,7 +76,7 @@ local function autoStealLoop()
         if brain and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             player.Character.HumanoidRootPart.CFrame = CFrame.new(brain.Position + Vector3.new(0,4,0))
         end
-        wait(1)
+        wait(0.5)
     end
 end
 
@@ -132,7 +93,63 @@ stealBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-frame.Active = true
-frame.Draggable = true
+-- [5] FLY: Flotar en móvil (sube, baja, apaga)
+local flyState = 0 -- 0: off, 1: up, 2: down
+local flyBtn = makeBtn("Fly: OFF", Color3.fromRGB(120, 200, 255))
+local flyBV = nil
 
-print("Brainrot AutoSteal menú cargado correctamente con protección de contraseña.")
+local function setFly(state)
+    local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if flyBV then flyBV:Destroy() flyBV = nil end
+    if state == 1 then
+        flyBV = Instance.new("BodyVelocity")
+        flyBV.MaxForce = Vector3.new(0, math.huge, 0)
+        flyBV.Velocity = Vector3.new(0, 40, 0)
+        flyBV.Parent = hrp
+        flyBtn.Text = "Fly: SUBIENDO"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
+    elseif state == 2 then
+        flyBV = Instance.new("BodyVelocity")
+        flyBV.MaxForce = Vector3.new(0, math.huge, 0)
+        flyBV.Velocity = Vector3.new(0, -40, 0)
+        flyBV.Parent = hrp
+        flyBtn.Text = "Fly: BAJANDO"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(255, 160, 60)
+    else
+        if flyBV then flyBV:Destroy() flyBV = nil end
+        flyBtn.Text = "Fly: OFF"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(120, 200, 255)
+    end
+end
+
+flyBtn.MouseButton1Click:Connect(function()
+    flyState = (flyState + 1) % 3 -- 0 -> 1 -> 2 -> 0 ...
+    setFly(flyState)
+end)
+
+-- [6] NOCLIP
+local noclip = false
+local noclipBtn = makeBtn("NoClip: OFF", Color3.fromRGB(255, 110, 180))
+noclipBtn.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    if noclip then
+        noclipBtn.Text = "NoClip: ON"
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
+    else
+        noclipBtn.Text = "NoClip: OFF"
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(255, 110, 180)
+    end
+end)
+
+game:GetService('RunService').Stepped:Connect(function()
+    if noclip and player.Character then
+        for _,v in pairs(player.Character:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+print("Menú lateral Brainrot cargado (AutoSteal, Fly, Noclip).")
