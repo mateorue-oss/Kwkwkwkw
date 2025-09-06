@@ -1,1 +1,116 @@
+-- Script Roblox: Menu GUI para Steal a Brainrot (Jump, Teleport, AutoSteal)
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "StealBrainrotMenu"
+gui.Parent = game.CoreGui
 
+-- Crear Frame principal
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 170)
+frame.Position = UDim2.new(0, 30, 0, 130)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.2
+frame.Parent = gui
+
+local UICorner = Instance.new("UICorner", frame)
+UICorner.CornerRadius = UDim.new(0, 12)
+
+-- Título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundTransparency = 1
+title.Text = "Steal a Brainrot"
+title.Font = Enum.Font.GothamBlack
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(255, 224, 102)
+title.Parent = frame
+
+-- Función de salto infinito
+local infJump = false
+function infiniteJump()
+    if infJump then return end
+    infJump = true
+    game:GetService("UserInputService").JumpRequest:Connect(function()
+        if infJump then
+            player.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+        end
+    end)
+end
+function stopInfiniteJump()
+    infJump = false
+end
+
+-- Función para encontrar la base del jugador
+local function getBase()
+    for _,v in pairs(workspace:GetDescendants()) do
+        if v:IsA("SpawnLocation") and v.TeamColor == player.TeamColor then
+            return v.Position
+        end
+    end
+    return nil
+end
+
+-- Botón de salto infinito
+local jumpBtn = Instance.new("TextButton")
+jumpBtn.Size = UDim2.new(1, -20, 0, 32)
+jumpBtn.Position = UDim2.new(0, 10, 0, 45)
+jumpBtn.Text = "Activar Salto Infinito"
+jumpBtn.Font = Enum.Font.Gotham
+jumpBtn.TextSize = 16
+jumpBtn.BackgroundColor3 = Color3.fromRGB(48, 158, 255)
+jumpBtn.TextColor3 = Color3.new(1,1,1)
+jumpBtn.Parent = frame
+jumpBtn.MouseButton1Click:Connect(function()
+    infiniteJump()
+    jumpBtn.Text = "Salto Infinito ACTIVADO"
+    jumpBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
+end)
+
+-- Botón para ir a la base
+local baseBtn = Instance.new("TextButton")
+baseBtn.Size = UDim2.new(1, -20, 0, 32)
+baseBtn.Position = UDim2.new(0, 10, 0, 85)
+baseBtn.Text = "Ir a tu Base"
+baseBtn.Font = Enum.Font.Gotham
+baseBtn.TextSize = 16
+baseBtn.BackgroundColor3 = Color3.fromRGB(255, 174, 66)
+baseBtn.TextColor3 = Color3.new(1,1,1)
+baseBtn.Parent = frame
+baseBtn.MouseButton1Click:Connect(function()
+    local basePos = getBase()
+    if basePos then
+        player.Character:MoveTo(basePos + Vector3.new(0,3,0))
+    end
+end)
+
+-- Botón para Autosteal (cerebro)
+local stealBtn = Instance.new("TextButton")
+stealBtn.Size = UDim2.new(1, -20, 0, 32)
+stealBtn.Position = UDim2.new(0, 10, 0, 125)
+stealBtn.Text = "AutoSteal (Cerebro)"
+stealBtn.Font = Enum.Font.Gotham
+stealBtn.TextSize = 16
+stealBtn.BackgroundColor3 = Color3.fromRGB(231, 58, 58)
+stealBtn.TextColor3 = Color3.new(1,1,1)
+stealBtn.Parent = frame
+stealBtn.MouseButton1Click:Connect(function()
+    -- Busca el "brain" (puedes ajustar esto si el objeto se llama diferente)
+    local brain = workspace:FindFirstChild("Brain") or workspace:FindFirstChild("brain")
+    if brain then
+        player.Character:MoveTo(brain.Position + Vector3.new(0,3,0))
+        wait(0.18)
+        local basePos = getBase()
+        if basePos then
+            wait(0.11)
+            player.Character:MoveTo(basePos + Vector3.new(0,3,0))
+        end
+    end
+end)
+
+-- Hacer draggable el menú con el mouse
+frame.Active = true
+frame.Draggable = true
+
+-- Mensaje de consola
+print("Steal a Brainrot menu cargado correctamente. ¡Diviértete!")
