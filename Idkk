@@ -1,12 +1,71 @@
---[[
-Script Roblox: Menú GUI para Steal a Brainrot
-Incluye:
-- AutoSteal ON/OFF
-- ESP BASE (muestra el tiempo para que se abra cada base)
-- ESP PLAYER (siempre muestra a todos los jugadores incluso invisibles)
---]]
+-- Script Roblox: Menú GUI para Steal a Brainrot con contraseña de acceso
 
 local player = game.Players.LocalPlayer
+
+-- CONFIGURA AQUÍ TU CONTRASEÑA
+local PASSWORD = "Senko Hub"
+
+-- GUI para la contraseña
+local passGui = Instance.new("ScreenGui")
+passGui.Name = "PasswordPrompt"
+passGui.Parent = game.CoreGui
+
+local passFrame = Instance.new("Frame")
+passFrame.Size = UDim2.new(0, 270, 0, 120)
+passFrame.Position = UDim2.new(0.5, -135, 0.5, -60)
+passFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+passFrame.BackgroundTransparency = 0.15
+passFrame.Parent = passGui
+
+local passUICorner = Instance.new("UICorner", passFrame)
+passUICorner.CornerRadius = UDim.new(0, 12)
+
+local passLabel = Instance.new("TextLabel")
+passLabel.Size = UDim2.new(1, 0, 0, 28)
+passLabel.Position = UDim2.new(0,0,0,16)
+passLabel.BackgroundTransparency = 1
+passLabel.Text = "Introduce la contraseña para acceder:"
+passLabel.TextColor3 = Color3.new(1,1,1)
+passLabel.Font = Enum.Font.GothamBold
+passLabel.TextSize = 15
+passLabel.Parent = passFrame
+
+local passBox = Instance.new("TextBox")
+passBox.Size = UDim2.new(1, -40, 0, 34)
+passBox.Position = UDim2.new(0, 20, 0, 52)
+passBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
+passBox.TextColor3 = Color3.new(1,1,1)
+passBox.Font = Enum.Font.Gotham
+passBox.TextSize = 18
+passBox.PlaceholderText = "Contraseña..."
+passBox.Text = ""
+passBox.Parent = passFrame
+
+local passBtn = Instance.new("TextButton")
+passBtn.Size = UDim2.new(1, -40, 0, 26)
+passBtn.Position = UDim2.new(0, 20, 0, 92)
+passBtn.BackgroundColor3 = Color3.fromRGB(38, 174, 255)
+passBtn.TextColor3 = Color3.new(1,1,1)
+passBtn.Font = Enum.Font.GothamBold
+passBtn.TextSize = 14
+passBtn.Text = "Entrar"
+passBtn.Parent = passFrame
+
+local accessGranted = false
+
+passBtn.MouseButton1Click:Connect(function()
+    if passBox.Text == PASSWORD then
+        accessGranted = true
+        passGui:Destroy()
+    else
+        passBox.Text = ""
+        passBox.PlaceholderText = "Contraseña incorrecta"
+        passBox.PlaceholderColor3 = Color3.fromRGB(255,70,70)
+    end
+end)
+
+-- Espera hasta que se ponga la contraseña correcta
+repeat wait() until accessGranted
 
 -- Crear GUI principal
 local gui = Instance.new("ScreenGui")
@@ -14,7 +73,7 @@ gui.Name = "BrainrotMenu"
 gui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 240, 0, 230)
+frame.Size = UDim2.new(0, 240, 0, 150)
 frame.Position = UDim2.new(0, 50, 0, 120)
 frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.BackgroundTransparency = 0.15
@@ -38,151 +97,37 @@ local function makeBtn(text, color)
     return btn
 end
 
--- ESP BASE
-local espBaseOn = false
-local baseLabels = {}
-
-local function removeBaseESP()
-    for _, label in pairs(baseLabels) do
-        if label and label.Parent then
-            label:Destroy()
-        end
-    end
-    baseLabels = {}
-end
-
-local function getBaseTimer(base)
-    -- Busca un objeto llamado "Timer" o similar en la base (ajusta si tu juego usa otro nombre)
-    for _,v in pairs(base:GetChildren()) do
-        if v:IsA("TextLabel") or v:IsA("BillboardGui") then
-            return v.Text or ""
-        elseif v:IsA("NumberValue") or v:IsA("IntValue") then
-            return tostring(v.Value)
-        end
-    end
-    -- Si no hay, puedes intentar leerlo de otro modo, o devolver vacío
-    return ""
-end
-
-local function espBaseLoop()
-    while espBaseOn do
-        removeBaseESP()
-        for _,desc in pairs(workspace:GetDescendants()) do
-            if desc:IsA("SpawnLocation") or desc.Name:lower():find("base") then
-                local gui = Instance.new("BillboardGui", desc)
-                gui.Adornee = desc
-                gui.Size = UDim2.new(0,80,0,30)
-                gui.AlwaysOnTop = true
-                gui.Name = "ESP_BASE_LABEL"
-                local txt = Instance.new("TextLabel", gui)
-                txt.Size = UDim2.new(1,0,1,0)
-                txt.BackgroundTransparency = 1
-                txt.Text = "Tiempo: " .. getBaseTimer(desc)
-                txt.TextColor3 = Color3.fromRGB(255,255,0)
-                txt.Font = Enum.Font.GothamBold
-                txt.TextStrokeTransparency = 0.3
-                txt.TextSize = 16
-                table.insert(baseLabels, gui)
-            end
-        end
-        wait(1)
-    end
-    removeBaseESP()
-end
-
-local baseBtn = makeBtn("ESP BASE: OFF", Color3.fromRGB(255, 174, 66))
-baseBtn.MouseButton1Click:Connect(function()
-    espBaseOn = not espBaseOn
-    if espBaseOn then
-        baseBtn.Text = "ESP BASE: ON"
-        baseBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
-        spawn(espBaseLoop)
-    else
-        baseBtn.Text = "ESP BASE: OFF"
-        baseBtn.BackgroundColor3 = Color3.fromRGB(255, 174, 66)
-    end
-end)
-
--- ESP PLAYER
-local espPlayerOn = false
-local playerESPList = {}
-
-local function removeAllPlayerESP()
-    for _, esp in pairs(playerESPList) do
-        if esp and esp.Parent then
-            esp:Destroy()
-        end
-    end
-    playerESPList = {}
-end
-
-local function addESPToCharacter(character)
-    if character:FindFirstChild("HumanoidRootPart") and not character:FindFirstChild("PlayerESP") then
-        local esp = Instance.new("BillboardGui", character)
-        esp.Name = "PlayerESP"
-        esp.Adornee = character.HumanoidRootPart
-        esp.Size = UDim2.new(0,100,0,30)
-        esp.AlwaysOnTop = true
-        local nameLabel = Instance.new("TextLabel", esp)
-        nameLabel.Size = UDim2.new(1,0,1,0)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.Text = character.Name
-        nameLabel.TextColor3 = Color3.fromRGB(255,80,80)
-        nameLabel.Font = Enum.Font.GothamBold
-        nameLabel.TextStrokeTransparency = 0.3
-        nameLabel.TextSize = 16
-        table.insert(playerESPList, esp)
-    end
-end
-
-local function playerESPLoop()
-    while espPlayerOn do
-        removeAllPlayerESP()
-        for _,plr in pairs(game.Players:GetPlayers()) do
-            if plr ~= player and plr.Character then
-                addESPToCharacter(plr.Character)
-            end
-        end
-        wait(1)
-    end
-    removeAllPlayerESP()
-end
-
-local playerBtn = makeBtn("ESP PLAYER: OFF", Color3.fromRGB(48, 158, 255))
-playerBtn.MouseButton1Click:Connect(function()
-    espPlayerOn = not espPlayerOn
-    if espPlayerOn then
-        playerBtn.Text = "ESP PLAYER: ON"
-        playerBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
-        spawn(playerESPLoop)
-    else
-        playerBtn.Text = "ESP PLAYER: OFF"
-        playerBtn.BackgroundColor3 = Color3.fromRGB(48, 158, 255)
-    end
-end)
-
--- AUTOSTEAL
+-- AUTOSTEAL (lleva al jugador automáticamente al "Brain")
 local autoStealOn = false
+
+local function findBrain()
+    for _,v in pairs(workspace:GetChildren()) do
+        if v.Name:lower():find("brain") then
+            return v
+        end
+    end
+    return nil
+end
+
 local function autoStealLoop()
     while autoStealOn do
-        local brain = workspace:FindFirstChild("Brain") or workspace:FindFirstChild("brain")
+        local brain = findBrain()
         if brain and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = player.Character.HumanoidRootPart
-            hrp.CFrame = CFrame.new(brain.Position + Vector3.new(0,3,0))
+            player.Character.HumanoidRootPart.CFrame = CFrame.new(brain.Position + Vector3.new(0,4,0))
         end
         wait(1)
     end
 end
 
-local stealBtn = makeBtn("AutoSteal: OFF", Color3.fromRGB(231, 58, 58))
+local stealBtn = makeBtn("AutoSteal Brainrot: OFF", Color3.fromRGB(231, 58, 58))
 stealBtn.MouseButton1Click:Connect(function()
     autoStealOn = not autoStealOn
     if autoStealOn then
-        stealBtn.Text = "AutoSteal: ON"
+        stealBtn.Text = "AutoSteal Brainrot: ON"
         stealBtn.BackgroundColor3 = Color3.fromRGB(35, 232, 99)
         spawn(autoStealLoop)
     else
-        stealBtn.Text = "AutoSteal: OFF"
+        stealBtn.Text = "AutoSteal Brainrot: OFF"
         stealBtn.BackgroundColor3 = Color3.fromRGB(231, 58, 58)
     end
 end)
@@ -190,4 +135,4 @@ end)
 frame.Active = true
 frame.Draggable = true
 
-print("Brainrot ESP + AutoSteal menú cargado correctamente.")
+print("Brainrot AutoSteal menú cargado correctamente con protección de contraseña.")
